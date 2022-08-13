@@ -1,0 +1,43 @@
+version: '3'
+services:
+  simulator:
+    image: simulation-measurements
+    links:
+      - "redis"
+    environment:
+      - REDIS_HOST=redis
+  subscriber-measurements:
+    image: subsciber-measurements-events
+    links:
+      - "redis"
+      - "measurements-manager"
+    environment:
+      - REDIS_HOST=redis
+      - MEASUREMENTS_HOST=http://measurements-manager
+  measurements-api:
+    image: measurements-api
+    links:
+      - "measurements-manager"
+    environment:
+      - MEASUREMENTS_HOST=http://measurements-manager
+    ports:
+      - "8080:80"
+  measurements-manager:
+    image: measurements-manager
+    links:
+      - "postgres"
+    ports:
+      - "8081:80"
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_DB=measurements
+      - POSTGRES_USER=prueba
+      - POSTGRES_PASSWORD=prueba
+  redis:
+    image: redis
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_DB=measurements
+      - POSTGRES_USER=prueba
+      - POSTGRES_PASSWORD=prueba
