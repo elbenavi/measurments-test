@@ -15,3 +15,6 @@ python -m pip install -r requirements.txt
 
 to execute run:
 python main.py
+
+to generate image
+docker build -t name-image .

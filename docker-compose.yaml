@@ -1,27 +1,19 @@
 version: '3'
 services:
-  simulator:
-    image: simulation-measurements
-    links:
-      - "redis"
+  postgres:
+    image: postgres
     environment:
-      - REDIS_HOST=redis
-  subscriber-measurements:
-    image: subsciber-measurements-events
-    links:
-      - "redis"
-      - "measurements-manager"
-    environment:
-      - REDIS_HOST=redis
-      - MEASUREMENTS_HOST=http://measurements-manager
-  measurements-api:
-    image: measurements-api
-    links:
-      - "measurements-manager"
-    environment:
-      - MEASUREMENTS_HOST=http://measurements-manager
-    ports:
-      - "8080:80"
+      - POSTGRES_DB=measurements
+      - POSTGRES_USER=prueba
+      - POSTGRES_PASSWORD=prueba
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "measurements"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 40s  
+  redis:
+    image: redis
   measurements-manager:
     image: measurements-manager
     links:
@@ -33,11 +25,36 @@ services:
       - POSTGRES_DB=measurements
       - POSTGRES_USER=prueba
       - POSTGRES_PASSWORD=prueba
-  redis:
-    image: redis
-  postgres:
-    image: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+  simulator:
+    image: simulador
+    links:
+      - "redis"
     environment:
-      - POSTGRES_DB=measurements
-      - POSTGRES_USER=prueba
-      - POSTGRES_PASSWORD=prueba
+      - REDIS_HOST=redis
+    depends_on:
+      - "redis"
+  subscriber-measurements:
+    image: subscriber
+    links:
+      - "redis"
+      - "measurements-manager"
+    depends_on:
+      - "redis"
+      - "measurements-manager"
+    environment:
+      - REDIS_HOST=redis
+      - MEASUREMENTS_HOST=http://measurements-manager
+  measurements-api:
+    image: measurements
+    links:
+      - "measurements-manager"
+    environment:
+      - MEASUREMENTS_HOST=http://measurements-manager
+    ports:
+      - "8080:80"
+    depends_on:
+      - "measurements-manager"
+  
